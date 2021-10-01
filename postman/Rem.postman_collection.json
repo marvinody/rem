@@ -1,0 +1,18 @@
+{
+	"info": {
+		"_postman_id": "aacb24b6-5ba6-41bd-8bd3-04a9ef5ecb26",
+		"name": "Rem",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Test API Call",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": null
+			},
+			"response": []
+		}
+	]
+}
