@@ -60,6 +60,8 @@
     "build.ts"
   ],
   "dependencies": {
+    "@types/x-ray": "^2.3.3",
+    "axios": "^0.22.0",
     "command-line-args": "^5.2.0",
     "cookie-parser": "^1.4.5",
     "dotenv": "^10.0.0",
@@ -71,7 +73,7 @@
     "jsonfile": "^6.1.0",
     "module-alias": "^2.2.2",
     "morgan": "^1.10.0",
-    "x-ray": "^2.3.4"
+    "x-ray": "2.3.3"
   },
   "devDependencies": {
     "@types/command-line-args": "^5.2.0",

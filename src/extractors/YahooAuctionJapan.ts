@@ -1,25 +1,49 @@
-import Xray from 'x-ray'
+import XRay from 'x-ray'
 
-const x = Xray()
+const x = XRay()
+import { IExtractor, Item, ResultSet, SearchParams } from './IExtractor'
 
-export const search = () => {
-    return new Promise((resolve, rej) => {
-        x('https://auctions.yahoo.co.jp/search/search?auccat=&tab_ex=commerce&ei=utf-8&aq=-1&oq=&sc_i=&p=%E6%9D%B1%E6%96%B9+%E3%81%B5%E3%82%82%E3%81%B5%E3%82%82&x=38&y=26', 'li.Product', [
-            {
-                title: '.Product__titleLink',
-                price: 'span.Product__priceValue',
-                image: 'img.Product__imageData@src'
-            }
-        ])
-            .paginate('li.Pager__list--next > a@href')
-            .limit(3)
-            .then(function (res: any) {
-                console.log(res[0]) // prints first result
-                resolve(res)
+
+const BASE_URL = 'https://auctions.yahoo.co.jp/search/search'
+const MAX_RESULTS_PER_PAGE = 100
+export default class YAJ implements IExtractor {
+    isEnabled() { return true; }
+    search({
+        page = 1,
+        query,
+    }: SearchParams): Promise<ResultSet> {
+        const searchParams = new URLSearchParams({
+            exflag: '1',
+            n: MAX_RESULTS_PER_PAGE.toString(),
+            b: ((page - 1) * MAX_RESULTS_PER_PAGE + 1).toString(),
+            p: query,
+            va: query,
+        });
+        const url = `${BASE_URL}?${searchParams.toString()}`
+        console.debug("YAJ:" +url)
+        return new Promise((resolve, rej) => {
+            x(url, {
+                hasNext: 'li.Pager__list--next > a@href',
+                items: x('li.Product', [
+                    {
+                        title: '.Product__titleLink',
+                        price: 'span.Product__priceValue',
+                        image: 'img.Product__imageData@src'
+                    }
+                ])
             })
-            .catch(function (err: Error) {
-                console.log(err) // handle error in promise
-                rej(err)
-            })
-    })
+
+                .then(function (res: any) {
+                    resolve({
+                        items: res,
+                        hasMore: false,
+                    })
+                })
+                .catch(function (err: Error) {
+                    console.log(err) // handle error in promise
+                    rej(err)
+                })
+        })
+    }
 }
+

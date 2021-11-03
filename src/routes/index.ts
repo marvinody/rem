@@ -9,7 +9,7 @@ userRouter.post('/add', addOneUser);
 userRouter.put('/update', updateOneUser);
 userRouter.delete('/delete/:id', deleteOneUser);
 
-import {  search} from './Search'
+import { search } from './Search'
 
 // Export the base-router
 const baseRouter = Router();
