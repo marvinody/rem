@@ -1,3 +1,5 @@
+// god, this is why I hate TS. shit typings make this painful to do
+/* eslint-disable @typescript-eslint/no-misused-promises */
 import { Router } from 'express';
 import { getAllUsers, addOneUser, updateOneUser, deleteOneUser } from './Users';
 
@@ -9,10 +11,10 @@ userRouter.post('/add', addOneUser);
 userRouter.put('/update', updateOneUser);
 userRouter.delete('/delete/:id', deleteOneUser);
 
-import { search } from './Search'
+import { YAJsearch } from './Search'
 
 // Export the base-router
 const baseRouter = Router();
 baseRouter.use('/users', userRouter);
-baseRouter.get('/test', search)
+baseRouter.get('/search/yaj', YAJsearch)
 export default baseRouter;

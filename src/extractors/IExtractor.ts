@@ -1,10 +1,15 @@
 
+export enum Sites {
+  YAJ = 'YAJ'
+}
+
 export interface Item {
-  site: string;
+  site: Sites;
   siteCode: string;
   url: string;
   price: number;
   imageURL: string;
+  title: string;
 }
 
 export interface SearchParams {
@@ -12,12 +17,12 @@ export interface SearchParams {
   page?: number;
 }
 
-export interface ResultSet {
-  items: Item[];
+export interface ResultSet<CustomItem extends Item> {
+  items: CustomItem[];
   hasMore: boolean;
 }
 
-export interface IExtractor {
+export interface IExtractor<CustomItem extends Item> {
   isEnabled(): boolean;
-  search(params: SearchParams): Promise<ResultSet>;
+  search(params: SearchParams): Promise<ResultSet<CustomItem>>;
 }
