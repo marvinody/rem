@@ -1,16 +1,65 @@
 {
 	"info": {
-		"_postman_id": "aacb24b6-5ba6-41bd-8bd3-04a9ef5ecb26",
+		"_postman_id": "c2e2c40e-b7e0-486e-be56-467ec9241a71",
 		"name": "Rem",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
 		{
-			"name": "Test API Call",
+			"name": "YAJ Search",
 			"request": {
 				"method": "GET",
 				"header": [],
-				"url": null
+				"url": {
+					"raw": "{{host}}/api/search/yaj?query=東方 ふもふも&page=1",
+					"host": [
+						"{{host}}"
+					],
+					"path": [
+						"api",
+						"search",
+						"yaj"
+					],
+					"query": [
+						{
+							"key": "query",
+							"value": "東方 ふもふも"
+						},
+						{
+							"key": "page",
+							"value": "1"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Mercari Search",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{host}}/api/search/mercari?query=東方 ふもふも&page=1",
+					"host": [
+						"{{host}}"
+					],
+					"path": [
+						"api",
+						"search",
+						"mercari"
+					],
+					"query": [
+						{
+							"key": "query",
+							"value": "東方 ふもふも"
+						},
+						{
+							"key": "page",
+							"value": "1"
+						}
+					]
+				}
 			},
 			"response": []
 		}
