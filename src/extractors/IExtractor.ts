@@ -1,6 +1,7 @@
 
 export enum Sites {
-  YAJ = 'YAJ'
+  YAJ = 'YAJ',
+  MERCARI = 'MERCARI',
 }
 
 export interface Item {

@@ -11,10 +11,12 @@ userRouter.post('/add', addOneUser);
 userRouter.put('/update', updateOneUser);
 userRouter.delete('/delete/:id', deleteOneUser);
 
-import { YAJsearch } from './Search'
+import { YAJsearch } from './YAJSearch'
+import { MercariSearch } from './MercariSearch'
 
 // Export the base-router
 const baseRouter = Router();
 baseRouter.use('/users', userRouter);
 baseRouter.get('/search/yaj', YAJsearch)
+baseRouter.get('/search/mercari', MercariSearch)
 export default baseRouter;
