@@ -47,7 +47,6 @@ const makeJWTKeys = async () => {
 }
 
 const makeDPOPProofJWTHeader = (keys) => {
-  console.log({ keys });
   return {
     "typ": "dpop+jwt",
     "alg": "ES256",

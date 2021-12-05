@@ -91,7 +91,6 @@ export default class YAJ implements IExtractor<YAJItem> {
             va: query,
         });
         const url = `${BASE_URL}?${searchParams.toString()}`
-        console.debug("YAJ:" + url)
         return new Promise((resolve, rej) => {
             x(url, {
                 hasMore: 'li.Pager__list--next > a@href | boolify',

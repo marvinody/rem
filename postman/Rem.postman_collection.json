@@ -9,7 +9,13 @@
 			"name": "YAJ Search",
 			"request": {
 				"method": "GET",
-				"header": [],
+				"header": [
+					{
+						"key": "api-key",
+						"value": "mysecretkey",
+						"type": "text"
+					}
+				],
 				"url": {
 					"raw": "{{host}}/api/search/yaj?query=東方 ふもふも&page=1",
 					"host": [
@@ -38,7 +44,13 @@
 			"name": "Mercari Search",
 			"request": {
 				"method": "GET",
-				"header": [],
+				"header": [
+					{
+						"key": "api-key",
+						"value": "mysecretkey",
+						"type": "text"
+					}
+				],
 				"url": {
 					"raw": "{{host}}/api/search/mercari?query=東方 ふもふも&page=1",
 					"host": [

@@ -13,10 +13,7 @@ export async function YAJsearch(req: Request, res: Response) {
 
         throw new Error("Page must be a number if given & needs to be non-zero & positive")
     }
-console.log({
-            page,
-            nu: Number(page)
-        })
+
     const results = await service.search({ query, page:Number(page), })
     res.json(results)
 }

@@ -1,7 +1,9 @@
 // god, this is why I hate TS. shit typings make this painful to do
 /* eslint-disable @typescript-eslint/no-misused-promises */
 import { Router } from 'express';
+import { authHandler } from './util'
 import { getAllUsers, addOneUser, updateOneUser, deleteOneUser } from './Users';
+
 
 
 // User-route
@@ -17,6 +19,6 @@ import { MercariSearch } from './MercariSearch'
 // Export the base-router
 const baseRouter = Router();
 baseRouter.use('/users', userRouter);
-baseRouter.get('/search/yaj', YAJsearch)
-baseRouter.get('/search/mercari', MercariSearch)
+baseRouter.get('/search/yaj', authHandler, YAJsearch)
+baseRouter.get('/search/mercari', authHandler, MercariSearch)
 export default baseRouter;
