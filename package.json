@@ -9,6 +9,9 @@
     "test": "nodemon --config ./spec/nodemon.json",
     "test:no-reloading": "./node_modules/.bin/ts-node -r tsconfig-paths/register ./spec"
   },
+  "engines": {
+    "node": "17.x"
+  },
   "nodemonConfig": {
     "watch": [
       "src"
