@@ -77,7 +77,7 @@ const scraperToResultSet = (scraped: XScraper): ResultSet<YAJItem> => {
 
 const BASE_URL = 'https://auctions.yahoo.co.jp/search/search'
 const MAX_RESULTS_PER_PAGE = 100
-export default class YAJ implements IExtractor<YAJItem> {
+export default class YAJ implements IExtractor<YAJItem, SearchParams> {
     isEnabled() { return true; }
     search({
         page = 1,

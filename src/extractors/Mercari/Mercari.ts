@@ -39,7 +39,7 @@ const mercariToResultSet = (data: MercariSearchResp): ResultSet<Item> => ({
   }))
 })
 
-export default class Mercari implements IExtractor<Item> {
+export default class Mercari implements IExtractor<Item, SearchParams> {
 
   keys?: keyPair
   request: Axios

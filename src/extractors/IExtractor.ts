@@ -2,6 +2,7 @@
 export enum Sites {
   YAJ = 'YAJ',
   MERCARI = 'MERCARI',
+  LASHINBANG = 'LASHINBANG',
 }
 
 export interface Item {
@@ -23,7 +24,7 @@ export interface ResultSet<CustomItem extends Item> {
   hasMore: boolean;
 }
 
-export interface IExtractor<CustomItem extends Item> {
+export interface IExtractor<CustomItem extends Item, Params extends SearchParams> {
   isEnabled(): boolean;
-  search(params: SearchParams): Promise<ResultSet<CustomItem>>;
+  search(params: Params): Promise<ResultSet<CustomItem>>;
 }
