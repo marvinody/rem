@@ -21,4 +21,10 @@ const authHandler = (req: ApiKeyRequest, res: Response, next: NextFunction) => {
   }
 }
 
-export { authHandler }
+const notFoundHandler = (req: Request, res: Response,) => {
+
+  return res.sendStatus(404)
+
+}
+
+export { authHandler, notFoundHandler }
