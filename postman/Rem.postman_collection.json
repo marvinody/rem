@@ -47,7 +47,7 @@
 				"header": [
 					{
 						"key": "api-key",
-						"value": "mysecretkey",
+						"value": "diffusedAtwitchAdemystifyAwikipedia",
 						"type": "text"
 					}
 				],
@@ -60,6 +60,76 @@
 						"api",
 						"search",
 						"mercari"
+					],
+					"query": [
+						{
+							"key": "query",
+							"value": "東方 ふもふも"
+						},
+						{
+							"key": "page",
+							"value": "1"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Surugaya Search",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "api-key",
+						"value": "mysecretkey",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{host}}/api/search/surugaya?query=東方 ふもふも&page=1",
+					"host": [
+						"{{host}}"
+					],
+					"path": [
+						"api",
+						"search",
+						"surugaya"
+					],
+					"query": [
+						{
+							"key": "query",
+							"value": "東方 ふもふも"
+						},
+						{
+							"key": "page",
+							"value": "1"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "LashinBang Search",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "api-key",
+						"value": "mysecretkey",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{host}}/api/search/lashinbang?query=東方 ふもふも&page=1",
+					"host": [
+						"{{host}}"
+					],
+					"path": [
+						"api",
+						"search",
+						"lashinbang"
 					],
 					"query": [
 						{
