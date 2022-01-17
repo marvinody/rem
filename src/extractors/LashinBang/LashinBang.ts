@@ -14,7 +14,7 @@ const lashinBangToResultSet = (data: LashingBangSearchResp): ResultSet<LashinBan
         site: Sites.LASHINBANG,
         imageURL: item.image,
         price: item.price,
-        siteCode: item.itemId,
+        siteCode: item.itemid,
         title: item.title,
         url: item.url,
         maker: item.narrow2,
@@ -31,7 +31,7 @@ type LashingBangSearchResp = {
                 last_page: number
             }
             items: Array<{
-                itemId: string
+                itemid: string
                 title: string
                 url: string
                 image: string
