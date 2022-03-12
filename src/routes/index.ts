@@ -16,6 +16,7 @@ userRouter.delete('/delete/:id', deleteOneUser);
 import { YAJsearch } from './YAJSearch'
 import { MercariSearch } from './MercariSearch'
 import {LashingBangsearch} from './LashingBang'
+import { RakutenSearch } from './RakutenSearch';
 
 // Export the base-router
 const baseRouter = Router();
@@ -23,6 +24,7 @@ baseRouter.use('/users', userRouter);
 baseRouter.get('/search/yaj', authHandler, YAJsearch)
 baseRouter.get('/search/mercari', authHandler, MercariSearch)
 baseRouter.get('/search/lashinbang', authHandler, LashingBangsearch)
+baseRouter.get('/search/rakuten', authHandler, RakutenSearch)
 
 
 baseRouter.use(notFoundHandler)
