@@ -17,6 +17,7 @@ import { YAJsearch } from './YAJSearch'
 import { MercariSearch } from './MercariSearch'
 import {LashingBangsearch} from './LashingBang'
 import { RakutenSearch } from './RakutenSearch';
+import { MandarakeSearch } from './MandarakeSearch';
 
 // Export the base-router
 const baseRouter = Router();
@@ -25,6 +26,7 @@ baseRouter.get('/search/yaj', authHandler, YAJsearch)
 baseRouter.get('/search/mercari', authHandler, MercariSearch)
 baseRouter.get('/search/lashinbang', authHandler, LashingBangsearch)
 baseRouter.get('/search/rakuten', authHandler, RakutenSearch)
+baseRouter.get('/search/mandarake', authHandler, MandarakeSearch)
 
 
 baseRouter.use(notFoundHandler)
