@@ -3,6 +3,7 @@ export enum Sites {
   YAJ = 'YAJ',
   MERCARI = 'MERCARI',
   LASHINBANG = 'LASHINBANG',
+  RAKUTEN = 'RAKUTEN',
 }
 
 export interface Item {
