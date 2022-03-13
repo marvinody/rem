@@ -73,6 +73,7 @@ export default class YAJ implements IExtractor<Item, SearchParams> {
             page: page.toString(),
             soldOut: '1',
             keyword: query,
+            dispAdult: '0'
         });
         const url = `${BASE_URL}?${searchParams.toString()}`
         return new Promise((resolve, rej) => {
