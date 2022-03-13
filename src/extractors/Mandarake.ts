@@ -1,5 +1,5 @@
 import XRay from 'x-ray'
-import makeXrayAxiosDriver from 'src/util/XrayAxiosDriver'
+import makeXrayAxiosDriver from '../util/XrayAxiosDriver'
 
 const x = XRay({
     filters: {
