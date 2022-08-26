@@ -36,6 +36,7 @@ export interface YAJItem extends Item {
 
 type XScraper = {
     hasMore: boolean,
+    notice: boolean,
     meta: Array<{
         category: string,
         amount: number,
@@ -51,6 +52,14 @@ type XScraper = {
 }
 
 const scraperToResultSet = (scraped: XScraper): ResultSet<YAJItem> => {
+
+    if(scraped.notice) {
+        return {
+            hasMore: false,
+            items: [],
+        }
+    }
+
     const items = scraped.items.map(item => {
         const transformedItem: YAJItem = {
             site: Sites.YAJ,
@@ -94,6 +103,7 @@ export default class YAJ implements IExtractor<YAJItem, SearchParams> {
         return new Promise((resolve, rej) => {
             x(url, {
                 hasMore: 'li.Pager__list--next > a@href | boolify',
+                notice: '.Notice | boolify',
                 meta: x('li.Tab__item', [
                     {
                         category: '.Tab__text \
