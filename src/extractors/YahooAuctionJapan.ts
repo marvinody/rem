@@ -28,9 +28,18 @@ const x = XRay({
 })
 import { IExtractor, Item, ResultSet, SearchParams, Sites } from './IExtractor'
 
+type Prices = Array<{
+    label: string,
+    value: number,
+}>
+
+type VALID_SALES = 'BUYOUT' | 'AUCTION' | 'AUCTION_WITH_BUYOUT'
+type INVALID_SALES = 'UNKNOWN'
+type SALES = VALID_SALES | INVALID_SALES
+
 export interface YAJItem extends Item {
     site: Sites.YAJ
-    type: 'BUYOUT' | 'AUCTION'
+    type: SALES
     buyoutPrice?: number; // only appears on buyout items
 }
 
@@ -45,15 +54,52 @@ type XScraper = {
         siteCode: string
         url: string
         title: string
-        price: number
-        buyoutPrice: number
         imageURL: string
+        prices: Prices,
     }>
+}
+
+const pricingExtractor = (prices: Prices): {
+    type: SALES,
+    price: number,
+    buyoutPrice?: number
+} => {
+    const PROMPT_DECISION = '即決'; // buyout at this price
+    const CURRENT = '現在'; // current price
+
+    const auction = prices.find(p => p.label === CURRENT);
+    const buyout = prices.find(p => p.label === PROMPT_DECISION);
+
+    if (auction && buyout) {
+        return {
+            type: 'AUCTION_WITH_BUYOUT',
+            price: auction.value,
+            buyoutPrice: buyout.value
+        }
+    }
+    if (buyout) {
+        return {
+            type: 'BUYOUT',
+            price: buyout.value,
+            buyoutPrice: buyout.value, // for backwards compat
+        }
+    }
+    if (auction) {
+        return {
+            type: 'AUCTION',
+            price: auction.value
+        }
+    }
+
+    return {
+        type: 'UNKNOWN',
+        price: prices[0]?.value
+    }
 }
 
 const scraperToResultSet = (scraped: XScraper): ResultSet<YAJItem> => {
 
-    if(scraped.notice) {
+    if (scraped.notice) {
         return {
             hasMore: false,
             items: [],
@@ -61,19 +107,21 @@ const scraperToResultSet = (scraped: XScraper): ResultSet<YAJItem> => {
     }
 
     const items = scraped.items.map(item => {
+        const pricing = pricingExtractor(item.prices)
+
         const transformedItem: YAJItem = {
             site: Sites.YAJ,
-            type: 'AUCTION',
+            type: pricing.type,
             title: item.title,
             url: item.url,
-            price: item.price,
+            price: pricing.price,
             siteCode: item.siteCode,
             imageURL: item.imageURL
         }
-        if (item.buyoutPrice > 0) {
-            transformedItem.buyoutPrice = item.buyoutPrice
-            transformedItem.type = 'BUYOUT'
+        if (pricing.type === 'AUCTION_WITH_BUYOUT' || pricing.type === 'BUYOUT') {
+            transformedItem.buyoutPrice = pricing.buyoutPrice
         }
+        
         return transformedItem
     })
 
@@ -117,11 +165,14 @@ export default class YAJ implements IExtractor<YAJItem, SearchParams> {
                         siteCode: '.Product__imageLink@data-auction-id',
                         url: 'a.Product__imageLink@href',
                         title: '.Product__titleLink',
-                        price: 'span.Product__priceValue \
-                        | parseNonDecimalInt',
-                        buyoutPrice: 'span.Product__price:nth-child(2) .Product__priceValue \
-                        | parseNonDecimalInt',
-                        imageURL: 'img.Product__imageData@src'
+                        imageURL: 'img.Product__imageData@src',
+                        prices: x('div.Product__price', 'span.Product__price', [
+                            {
+                                label: '.Product__label',
+                                value: '.Product__priceValue \
+                                | parseNonDecimalInt',
+                            }
+                        ])
                     }
                 ])
             })
