@@ -39,13 +39,6 @@ type XScraper = {
 
 const scraperToResultSet = (scraped: XScraper): ResultSet<SurugayaItem> => {
 
-    // if (scraped.notice) {
-    //     return {
-    //         hasMore: false,
-    //         items: [],
-    //     }
-    // }
-
     const items = scraped.items.map(item => {
 
         const transformedItem: SurugayaItem = {
