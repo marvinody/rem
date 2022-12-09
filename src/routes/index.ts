@@ -21,6 +21,7 @@ import { MercariSearch } from './MercariSearch'
 import { LashingBangsearch } from './LashingBang'
 import { RakutenSearch } from './RakutenSearch';
 import { MandarakeSearch } from './MandarakeSearch';
+import { SurugayaSearch } from './SurugayaSearch';
 
 // Export the base-router
 const baseRouter = Router();
@@ -58,12 +59,12 @@ const cache = expeditious({
 })
 
 baseRouter.use(corsMiddleware);
-baseRouter.use('/users', userRouter);
 baseRouter.get('/search/yaj', authHandler, cache, YAJsearch)
 baseRouter.get('/search/mercari', authHandler, cache, MercariSearch)
 baseRouter.get('/search/lashinbang', authHandler, cache, LashingBangsearch)
 baseRouter.get('/search/rakuten', authHandler, cache, RakutenSearch)
 baseRouter.get('/search/mandarake', authHandler, cache, MandarakeSearch)
+baseRouter.get('/search/surugaya',authHandler, cache, SurugayaSearch)
 
 
 baseRouter.use(notFoundHandler)

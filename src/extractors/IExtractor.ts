@@ -5,6 +5,7 @@ export enum Sites {
   LASHINBANG = 'LASHINBANG',
   RAKUTEN = 'RAKUTEN',
   MANDARAKE = 'MANDARAKE',
+  SURUGAYA = 'SURUGAYA',
 }
 
 export interface Item {
