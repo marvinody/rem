@@ -9,13 +9,11 @@ const { MERCARI_SEARCH_DPOP } = process.env
 type MercariSearchResp = {
     result: "OK",
     meta: {
-      has_next: boolean,
-      num_found: number,
+      nextPageToken: string,
+      numFound: number,
     },
-    data: Array<{
-      seller: {
-        id: number,
-      }
+    items: Array<{
+      sellerId: number,
       id: string,
       name: string,
       price: number,
@@ -26,10 +24,12 @@ type MercariSearchResp = {
 }
 
 
+const baseURL = 'https://api.mercari.jp/'
+const searchPath = 'v2/entities:search'
 
 const mercariToResultSet = (data: MercariSearchResp): ResultSet<Item> => ({
-  hasMore: data.meta.has_next,
-  items: data.data.map(item => ({
+  hasMore: Boolean(data.meta.nextPageToken),
+  items: data.items.map(item => ({
     imageURL: item.thumbnails.length > 0 ? item.thumbnails[0] : '',
     site: Sites.MERCARI,
     price: item.price,
@@ -39,6 +39,8 @@ const mercariToResultSet = (data: MercariSearchResp): ResultSet<Item> => ({
   }))
 })
 
+const pageToPageToken = (page: number) => `v1:${page.toString()}`
+
 export default class Mercari implements IExtractor<Item, SearchParams> {
 
   keys?: keyPair
@@ -47,7 +49,7 @@ export default class Mercari implements IExtractor<Item, SearchParams> {
   constructor() {
 
     this.request = axios.create({
-      baseURL: 'https://api.mercari.jp/'
+      baseURL,
     })
   }
 
@@ -59,18 +61,28 @@ export default class Mercari implements IExtractor<Item, SearchParams> {
     { page = 1, query, dpop }:
       SearchParams & { dpop: string }):
     Promise<AxiosResponse<MercariSearchResp>> {
-    return this.request.get('search_index/search', {
+    return this.request.post(searchPath, {
+      "userId": "MERCARI_BOT", 
+      "pageSize": 120,
+      "pageToken": pageToPageToken(page),
+
+      "searchSessionId": "MERCARI_BOT",
+      "indexRouting": "INDEX_ROUTING_UNSPECIFIED",
+      "searchCondition": {
+          "keyword": query,
+          "sort": "SORT_CREATED_TIME",
+          "order": "ORDER_DESC",
+          "status": ["STATUS_ON_SALE"],
+          // "excludeKeyword": exclude_keywords,
+      },
+      "defaultDatasets": [
+          "DATASET_TYPE_MERCARI",
+          "DATASET_TYPE_BEYOND"
+      ]
+    },{
       headers: {
         'X-Platform': 'web',
         DPoP: dpop,
-      },
-      params: {
-        page: page - 1,
-        keyword: query,
-        limit: 120,
-        sort: 'created_time',
-        order: 'desc',
-        status: 'on_sale'
       },
     })
   }
@@ -80,8 +92,8 @@ export default class Mercari implements IExtractor<Item, SearchParams> {
     const payload = {
       "iat": Math.floor(Date.now() / 1000),
       "jti": "fake_madeup_jti",
-      "htu": "https://api.mercari.jp/search_index/search",
-      "htm": "GET"
+      "htu": `${baseURL}${searchPath}`,
+      "htm": "POST"
     }
 
     if (!this.keys) {
