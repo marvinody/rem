@@ -14,7 +14,7 @@ type MercariItem = {
   sellerId: number,
   id: string,
   name: string,
-  price: number,
+  price: string,
   thumbnails: Array<string>,
   itemType: string
   created: number // timestamp
@@ -22,16 +22,16 @@ type MercariItem = {
 }
 
 type MercariSearchResp = {
-    result: "OK",
-    meta: {
-      nextPageToken: string,
-      numFound: number,
-    },
-    items: Array<MercariItem>
+  result: "OK",
+  meta: {
+    nextPageToken: string,
+    numFound: number,
+  },
+  items: Array<MercariItem>
 }
 
 const makeUrl = (item: MercariItem) => {
-  if(item.itemType === ITEM_TYPES.ITEM_TYPE_MERCARI) {
+  if (item.itemType === ITEM_TYPES.ITEM_TYPE_MERCARI) {
     return `https://jp.mercari.com/item/${item.id}`
   }
   return `https://jp.mercari.com/shops/product/${item.id}`
@@ -45,7 +45,7 @@ const mercariToResultSet = (data: MercariSearchResp): ResultSet<Item> => ({
   items: data.items.map(item => ({
     imageURL: item.thumbnails.length > 0 ? item.thumbnails[0] : '',
     site: Sites.MERCARI,
-    price: item.price,
+    price: Number(item.price),
     siteCode: item.id,
     title: item.name,
     url: makeUrl(item)
@@ -75,24 +75,24 @@ export default class Mercari implements IExtractor<Item, SearchParams> {
       SearchParams & { dpop: string }):
     Promise<AxiosResponse<MercariSearchResp>> {
     return this.request.post(searchPath, {
-      "userId": "MERCARI_BOT", 
+      "userId": "MERCARI_BOT",
       "pageSize": 120,
-      "pageToken": pageToPageToken(page),
+      "pageToken": pageToPageToken(page - 1),
 
       "searchSessionId": "MERCARI_BOT",
       "indexRouting": "INDEX_ROUTING_UNSPECIFIED",
       "searchCondition": {
-          "keyword": query,
-          "sort": "SORT_CREATED_TIME",
-          "order": "ORDER_DESC",
-          "status": ["STATUS_ON_SALE"],
-          // "excludeKeyword": exclude_keywords,
+        "keyword": query,
+        "sort": "SORT_CREATED_TIME",
+        "order": "ORDER_DESC",
+        "status": ["STATUS_ON_SALE"],
+        // "excludeKeyword": exclude_keywords,
       },
       "defaultDatasets": [
-          "DATASET_TYPE_MERCARI",
-          "DATASET_TYPE_BEYOND"
+        "DATASET_TYPE_MERCARI",
+        "DATASET_TYPE_BEYOND"
       ]
-    },{
+    }, {
       headers: {
         'X-Platform': 'web',
         DPoP: dpop,
