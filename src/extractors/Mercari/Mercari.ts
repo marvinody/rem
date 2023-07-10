@@ -3,8 +3,23 @@ import { IExtractor, SearchParams, Item, ResultSet, Sites } from '../IExtractor'
 
 import { makeDPOP, makeJWTKeys, keyPair } from './utils.js'
 
+const ITEM_TYPES = {
+  ITEM_TYPE_BEYOND: "ITEM_TYPE_BEYOND",
+  ITEM_TYPE_MERCARI: "ITEM_TYPE_MERCARI",
+}
 
 const { MERCARI_SEARCH_DPOP } = process.env
+
+type MercariItem = {
+  sellerId: number,
+  id: string,
+  name: string,
+  price: number,
+  thumbnails: Array<string>,
+  itemType: string
+  created: number // timestamp
+  updated: number // timestamp
+}
 
 type MercariSearchResp = {
     result: "OK",
@@ -12,17 +27,15 @@ type MercariSearchResp = {
       nextPageToken: string,
       numFound: number,
     },
-    items: Array<{
-      sellerId: number,
-      id: string,
-      name: string,
-      price: number,
-      thumbnails: Array<string>
-      created: number // timestamp
-      updated: number // timestamp
-    }>
+    items: Array<MercariItem>
 }
 
+const makeUrl = (item: MercariItem) => {
+  if(item.itemType === ITEM_TYPES.ITEM_TYPE_MERCARI) {
+    return `https://jp.mercari.com/item/${item.id}`
+  }
+  return `https://jp.mercari.com/shops/product/${item.id}`
+}
 
 const baseURL = 'https://api.mercari.jp/'
 const searchPath = 'v2/entities:search'
@@ -35,7 +48,7 @@ const mercariToResultSet = (data: MercariSearchResp): ResultSet<Item> => ({
     price: item.price,
     siteCode: item.id,
     title: item.name,
-    url: `https://jp.mercari.com/item/${item.id}`
+    url: makeUrl(item)
   }))
 })
 
