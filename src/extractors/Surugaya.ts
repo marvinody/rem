@@ -32,8 +32,7 @@ type XScraper = {
         url: string
         title: string
         imageURL: string
-        teikaPrice: number,
-        lastLinePrice?: number
+        redPrice: number
     }>
 }
 
@@ -45,13 +44,9 @@ const scraperToResultSet = (scraped: XScraper): ResultSet<SurugayaItem> => {
             site: Sites.SURUGAYA,
             title: item.title,
             url: item.url,
-            price: item.teikaPrice,
+            price: item.redPrice,
             siteCode: item.siteCode,
             imageURL: item.imageURL
-        }
-
-        if(item.lastLinePrice) {
-            transformedItem.price = item.lastLinePrice
         }
 
         return transformedItem
@@ -87,8 +82,11 @@ export default class Surugaya implements IExtractor<SurugayaItem, SearchParams> 
                         url: '.title a@href',
                         title: '.title',
                         imageURL: '.photo_box img@src',
-                        teikaPrice: '.price_teika | parseNonDecimalInt',
-                        lastLinePrice: '.mgnB5.mgnT5 | parseNonDecimalInt'
+                        redPrice: '.item_price .text-red | parseNonDecimalInt',
+                        // just leaving this here for now in case this fix breaks it
+                        // we're just using the red price because idk
+                        // teikaPrice: '.price_teika | parseNonDecimalInt',
+                        // lastLinePrice: '.mgnB5.mgnT5 | parseNonDecimalInt'
                     }
                 ])
             })
