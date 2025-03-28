@@ -19,6 +19,10 @@ type MercariItem = {
   itemType: string
   created: number // timestamp
   updated: number // timestamp
+  auction?: {
+    totalBid: string
+    highestBid?: string
+  }
 }
 
 type MercariSearchResp = {
@@ -28,6 +32,17 @@ type MercariSearchResp = {
     numFound: number,
   },
   items: Array<MercariItem>
+}
+type ITEM_SALE_TYPE = 'SALE' | 'AUCTION'
+
+export interface MercariItemResult extends Item {
+  site: Sites.MERCARI
+  // Mercari specific fields
+  type: ITEM_SALE_TYPE
+  auction?: {
+    totalBids: number
+    highestBid?: number 
+  }
 }
 
 const makeUrl = (item: MercariItem) => {
@@ -48,7 +63,15 @@ const mercariToResultSet = (data: MercariSearchResp): ResultSet<Item> => ({
     price: Number(item.price),
     siteCode: item.id,
     title: item.name,
-    url: makeUrl(item)
+    url: makeUrl(item),
+    // Mercari specific fields
+    // Note: Mercari doesn't have auction details in the same way as YAJ
+    // For now, we will just return SALE as the type
+    type: item?.auction ? 'AUCTION' : 'SALE' as ITEM_SALE_TYPE,
+    auction: item?.auction ? {
+      totalBids: item?.auction?.totalBid,
+      highestBid: item.auction.highestBid
+    } : undefined
   }))
 })
 
@@ -88,6 +111,7 @@ export default class Mercari implements IExtractor<Item, SearchParams> {
         "status": ["STATUS_ON_SALE"],
         // "excludeKeyword": exclude_keywords,
       },
+      "withAuction": true,
       "defaultDatasets": [
         "DATASET_TYPE_MERCARI",
         "DATASET_TYPE_BEYOND"
