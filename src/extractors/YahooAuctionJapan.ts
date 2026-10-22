@@ -1,190 +1,288 @@
-import XRay from 'x-ray'
-
-const x = XRay({
-    filters: {
-        categoryTranslator: (value) => {
-            switch (value) {
-                case 'すべて':
-                    return 'ALL';
-                case 'オークション':
-                    return 'AUCTION'
-                case '定額':
-                    return 'BUY_IT_NOW'
-                default:
-                    return 'UNKNOWN_CATEGORY'
-            }
-        },
-        parseNonDecimalInt: (value: string) => {
-            // we're working in yen which probably not gonna have decimals
-            // if this fails later, probably because of that
-            const digits = value.match(/\d/g)
-            if (digits) {
-                return Number(digits.join(''))
-            }
-            return -1
-        },
-        boolify: val => Boolean(val)
-    }
-})
-import { IExtractor, Item, ResultSet, SearchParams, Sites } from './IExtractor'
+import axios from "axios";
+import { IExtractor, Item, ResultSet, SearchParams, Sites } from "./IExtractor";
+import logger from "../shared/Logger";
 
 type Prices = Array<{
-    label: string,
-    value: number,
-}>
+  label: string;
+  value: number;
+}>;
 
-type VALID_SALES = 'BUYOUT' | 'AUCTION' | 'AUCTION_WITH_BUYOUT'
-type INVALID_SALES = 'UNKNOWN'
-type SALES = VALID_SALES | INVALID_SALES
+type VALID_SALES = "BUYOUT" | "AUCTION" | "AUCTION_WITH_BUYOUT";
+type INVALID_SALES = "UNKNOWN";
+type SALES = VALID_SALES | INVALID_SALES;
 
 export interface YAJItem extends Item {
-    site: Sites.YAJ
-    type: SALES
-    buyoutPrice?: number; // only appears on buyout items
+  site: Sites.YAJ;
+  type: SALES;
+  buyoutPrice?: number; // only appears on buyout items
 }
 
 type XScraper = {
-    hasMore: boolean,
-    notice: boolean,
-    meta: Array<{
-        category: string,
-        amount: number,
-    }>,
-    items: Array<{
-        siteCode: string
-        url: string
-        title: string
-        imageURL: string
-        prices: Prices,
-    }>
-}
+  hasMore: boolean;
+  items: Array<{
+    siteCode: string;
+    url: string;
+    title: string;
+    imageURL: string;
+    prices: Prices;
+  }>;
+};
 
-const pricingExtractor = (prices: Prices): {
-    type: SALES,
-    price: number,
-    buyoutPrice?: number
+type JsonObject = Record<string, unknown>;
+
+type NextListingItem = {
+  auctionId?: string;
+  title?: string;
+  imageUrl?: string;
+  price?: number | string;
+  buyNowPrice?: number | string;
+  isFixedPrice?: boolean;
+};
+
+type NextListing = {
+  items?: NextListingItem[];
+  totalResultsAvailable?: number | string;
+  metadata?: {
+    limit?: number | string;
+  };
+};
+
+const parseNonDecimalInt = (value: unknown): number => {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return Math.floor(value);
+  }
+  if (typeof value === "string") {
+    const digits = value.match(/\d/g);
+    if (digits) {
+      return Number(digits.join(""));
+    }
+  }
+  return -1;
+};
+
+const pricingExtractor = (
+  prices: Prices,
+): {
+  type: SALES;
+  price: number;
+  buyoutPrice?: number;
 } => {
-    const PROMPT_DECISION = '即決'; // buyout at this price
-    const CURRENT = '現在'; // current price
+  const PROMPT_DECISION = "即決"; // buyout at this price
+  const CURRENT = "現在"; // current price
 
-    const auction = prices.find(p => p.label === CURRENT);
-    const buyout = prices.find(p => p.label === PROMPT_DECISION);
+  const auction = prices.find((p) => p.label === CURRENT);
+  const buyout = prices.find((p) => p.label === PROMPT_DECISION);
 
-    if (auction && buyout) {
-        return {
-            type: 'AUCTION_WITH_BUYOUT',
-            price: auction.value,
-            buyoutPrice: buyout.value
-        }
-    }
-    if (buyout) {
-        return {
-            type: 'BUYOUT',
-            price: buyout.value,
-            buyoutPrice: buyout.value, // for backwards compat
-        }
-    }
-    if (auction) {
-        return {
-            type: 'AUCTION',
-            price: auction.value
-        }
-    }
-
+  if (auction && buyout) {
     return {
-        type: 'UNKNOWN',
-        price: prices[0]?.value
-    }
-}
+      type: "AUCTION_WITH_BUYOUT",
+      price: auction.value,
+      buyoutPrice: buyout.value,
+    };
+  }
+  if (buyout) {
+    return {
+      type: "BUYOUT",
+      price: buyout.value,
+      buyoutPrice: buyout.value, // for backwards compat
+    };
+  }
+  if (auction) {
+    return {
+      type: "AUCTION",
+      price: auction.value,
+    };
+  }
+
+  return {
+    type: "UNKNOWN",
+    price: prices[0]?.value,
+  };
+};
 
 const scraperToResultSet = (scraped: XScraper): ResultSet<YAJItem> => {
+  const items = scraped.items.map((item) => {
+    const pricing = pricingExtractor(item.prices);
 
-    if (scraped.notice) {
-        return {
-            hasMore: false,
-            items: [],
-        }
+    const transformedItem: YAJItem = {
+      site: Sites.YAJ,
+      type: pricing.type,
+      title: item.title,
+      url: item.url,
+      price: pricing.price,
+      siteCode: item.siteCode,
+      imageURL: item.imageURL,
+    };
+    if (pricing.type === "AUCTION_WITH_BUYOUT" || pricing.type === "BUYOUT") {
+      transformedItem.buyoutPrice = pricing.buyoutPrice;
     }
 
-    const items = scraped.items.map(item => {
-        const pricing = pricingExtractor(item.prices)
+    return transformedItem;
+  });
 
-        const transformedItem: YAJItem = {
-            site: Sites.YAJ,
-            type: pricing.type,
-            title: item.title,
-            url: item.url,
-            price: pricing.price,
-            siteCode: item.siteCode,
-            imageURL: item.imageURL
+  return {
+    hasMore: scraped.hasMore,
+    items,
+  };
+};
+
+const isObject = (value: unknown): value is JsonObject =>
+  Boolean(value) && typeof value === "object" && !Array.isArray(value);
+
+const extractNextData = (html: string): unknown => {
+  const pattern =
+    /<script[^>]*id=["']__NEXT_DATA__["'][^>]*>([\s\S]*?)<\/script>/i;
+  const match = pattern.exec(html);
+  if (!match || !match[1]) {
+    throw new Error("Unable to find __NEXT_DATA__ payload in YAJ HTML");
+  }
+  return JSON.parse(match[1]);
+};
+
+const getListingFromNextData = (nextData: unknown): NextListing | undefined => {
+  if (!isObject(nextData)) {
+    return undefined;
+  }
+  const props = nextData.props;
+  if (!isObject(props)) {
+    return undefined;
+  }
+  const pageProps = props.pageProps;
+  if (!isObject(pageProps)) {
+    return undefined;
+  }
+  const initialState = pageProps.initialState;
+  if (!isObject(initialState)) {
+    return undefined;
+  }
+  const search = initialState.search;
+  if (!isObject(search)) {
+    return undefined;
+  }
+  const items = search.items;
+  if (!isObject(items)) {
+    return undefined;
+  }
+  const listing = items.listing;
+  if (!isObject(listing)) {
+    return undefined;
+  }
+
+  return listing as NextListing;
+};
+
+const extractItemsFromListing = (listing: NextListing): XScraper["items"] => {
+  if (!Array.isArray(listing.items)) {
+    return [];
+  }
+
+  return listing.items
+    .map((item) => {
+      const siteCode = typeof item.auctionId === "string" ? item.auctionId : "";
+      const title = typeof item.title === "string" ? item.title : "";
+
+      if (!siteCode || !title) {
+        return undefined;
+      }
+
+      const auctionPrice = parseNonDecimalInt(item.price);
+      const buyoutPrice = parseNonDecimalInt(item.buyNowPrice);
+
+      const prices: Prices = [];
+      if (item.isFixedPrice) {
+        if (buyoutPrice >= 0) {
+          prices.push({ label: "即決", value: buyoutPrice });
+        } else if (auctionPrice >= 0) {
+          prices.push({ label: "即決", value: auctionPrice });
         }
-        if (pricing.type === 'AUCTION_WITH_BUYOUT' || pricing.type === 'BUYOUT') {
-            transformedItem.buyoutPrice = pricing.buyoutPrice
+      } else {
+        if (auctionPrice >= 0) {
+          prices.push({ label: "現在", value: auctionPrice });
         }
-        
-        return transformedItem
+        if (buyoutPrice >= 0) {
+          prices.push({ label: "即決", value: buyoutPrice });
+        }
+      }
+
+      if (prices.length === 0) {
+        return undefined;
+      }
+
+      return {
+        siteCode,
+        url: `https://auctions.yahoo.co.jp/jp/auction/${siteCode}`,
+        title,
+        imageURL: typeof item.imageUrl === "string" ? item.imageUrl : "",
+        prices,
+      };
     })
+    .filter((item): item is XScraper["items"][number] => Boolean(item));
+};
 
+const extractHasMoreFromListing = (
+  listing: NextListing,
+  page: number,
+  currentItemCount: number,
+): boolean => {
+  const total = parseNonDecimalInt(listing.totalResultsAvailable);
+  const limit =
+    parseNonDecimalInt(listing.metadata?.limit) || MAX_RESULTS_PER_PAGE;
+
+  if (total < 0 || limit <= 0) {
+    return false;
+  }
+
+  const loadedItemCount = (page - 1) * limit + currentItemCount;
+  return loadedItemCount < total;
+};
+
+const nextDataToScraper = (nextData: unknown, page: number): XScraper => {
+  const listing = getListingFromNextData(nextData);
+  if (!listing) {
     return {
-        hasMore: scraped.hasMore,
-        items,
-    }
-}
+      hasMore: false,
+      items: [],
+    };
+  }
 
+  const items = extractItemsFromListing(listing);
+  return {
+    hasMore: extractHasMoreFromListing(listing, page, items.length),
+    items,
+  };
+};
 
-const BASE_URL = 'https://auctions.yahoo.co.jp/search/search'
-const MAX_RESULTS_PER_PAGE = 100
+const BASE_URL = "https://auctions.yahoo.co.jp/search/search";
+const MAX_RESULTS_PER_PAGE = 100;
 export default class YAJ implements IExtractor<YAJItem, SearchParams> {
-    isEnabled() { return true; }
-    search({
-        page = 1,
-        query,
-    }: SearchParams): Promise<ResultSet<YAJItem>> {
-        const searchParams = new URLSearchParams({
-            exflag: '1',
-            n: MAX_RESULTS_PER_PAGE.toString(),
-            b: ((page - 1) * MAX_RESULTS_PER_PAGE + 1).toString(),
-            p: query,
-            va: query,
-        });
-        const url = `${BASE_URL}?${searchParams.toString()}`
-        return new Promise((resolve, rej) => {
-            x(url, {
-                hasMore: 'li.Pager__list--next > a@href | boolify',
-                notice: '.Notice | boolify',
-                meta: x('li.Tab__item', [
-                    {
-                        category: '.Tab__text \
-                        | categoryTranslator',
-                        amount: '.Tab__subText \
-                        | parseNonDecimalInt'
-                    }
-                ]),
-                items: x('li.Product', [
-                    {
-                        siteCode: '.Product__imageLink@data-auction-id',
-                        url: 'a.Product__imageLink@href',
-                        title: '.Product__titleLink',
-                        imageURL: 'img.Product__imageData@src',
-                        prices: x('div.Product__price', 'span.Product__price', [
-                            {
-                                label: '.Product__label',
-                                value: '.Product__priceValue \
-                                | parseNonDecimalInt',
-                            }
-                        ])
-                    }
-                ])
-            })
+  isEnabled() {
+    return true;
+  }
+  async search({ page = 1, query }: SearchParams): Promise<ResultSet<YAJItem>> {
+    const searchParams = new URLSearchParams({
+      exflag: "1",
+      n: MAX_RESULTS_PER_PAGE.toString(),
+      b: ((page - 1) * MAX_RESULTS_PER_PAGE + 1).toString(),
+      p: query,
+      va: query,
+    });
+    const url = `${BASE_URL}?${searchParams.toString()}`;
+    logger.info({ url, query, page });
 
-                .then(function (resp: XScraper) {
-                    resolve(scraperToResultSet(resp))
-                })
-                .catch(function (err: Error) {
-                    console.log(err) // handle error in promise
-                    rej(err)
-                })
-        })
-    }
+    const { data } = await axios.get<string>(url, {
+      headers: {
+        "user-agent":
+          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 " +
+          "(KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36",
+      },
+      responseType: "text",
+    });
+
+    const nextData = extractNextData(data);
+    const scraped = nextDataToScraper(nextData, page);
+    logger.info(
+      `YAJ Search: ${query} page ${page} returned ${scraped.items.length} items`,
+    );
+    return scraperToResultSet(scraped);
+  }
 }
-
