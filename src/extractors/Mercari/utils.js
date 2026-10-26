@@ -106,7 +106,8 @@ const makeDPOP = async (keys, payload) => {
 
   const signingPayload = `${base64Header}.${base64Payload}`;
 
-  const signature = await sign(sk, signingPayload);
+  // newer Node rejects strings here; WebCrypto requires a BufferSource
+  const signature = await sign(sk, Buffer.from(signingPayload));
 
 
   const base64Sig = base64.urlEncode(signature);

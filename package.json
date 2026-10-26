@@ -10,8 +10,8 @@
     "test:no-reloading": "./node_modules/.bin/ts-node -r tsconfig-paths/register ./spec"
   },
   "engines": {
-    "node": "17.x",
-    "npm": "8.x"
+    "node": "24.x",
+    "npm": ">=10"
   },
   "nodemonConfig": {
     "watch": [
@@ -91,7 +91,7 @@
     "@types/jasmine": "^3.9.1",
     "@types/jsonfile": "^6.0.1",
     "@types/morgan": "^1.9.3",
-    "@types/node": "^16.11.9",
+    "@types/node": "^24.19.2",
     "@types/supertest": "^2.0.11",
     "@typescript-eslint/eslint-plugin": "^4.32.0",
     "@typescript-eslint/parser": "^4.32.0",
@@ -102,8 +102,8 @@
     "nock": "^13.5.6",
     "nodemon": "^2.0.13",
     "supertest": "^6.1.6",
-    "ts-node": "^10.2.1",
+    "ts-node": "^10.9.2",
     "tsconfig-paths": "^3.11.0",
-    "typescript": "^4.4.3"
+    "typescript": "~5.9"
   }
 }
