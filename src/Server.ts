@@ -7,6 +7,7 @@ import 'express-async-errors';
 
 import BaseRouter from './routes';
 import logger from '@shared/Logger';
+import { describeError, LOG_BODY_LIMIT } from '@shared/errorDetails';
 
 const app = express();
 const { BAD_REQUEST } = StatusCodes;
@@ -35,9 +36,17 @@ app.use('/api', BaseRouter);
 // Print API errors
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+    const details = describeError(err);
     logger.err(err, true);
+    if (details) {
+        logger.err(JSON.stringify({
+            route: req.originalUrl,
+            ...describeError(err, LOG_BODY_LIMIT),
+        }), true);
+    }
     return res.status(BAD_REQUEST).json({
         error: err.message,
+        ...(details ? { details } : {}),
     });
 });
 

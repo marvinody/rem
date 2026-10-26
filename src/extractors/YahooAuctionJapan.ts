@@ -1,6 +1,7 @@
 import axios from "axios";
 import { IExtractor, Item, ResultSet, SearchParams, Sites } from "./IExtractor";
 import logger from "../shared/Logger";
+import { DetailedError, describeError, truncate } from "../shared/errorDetails";
 
 type Prices = Array<{
   label: string;
@@ -129,14 +130,32 @@ const scraperToResultSet = (scraped: XScraper): ResultSet<YAJItem> => {
 const isObject = (value: unknown): value is JsonObject =>
   Boolean(value) && typeof value === "object" && !Array.isArray(value);
 
+const HTML_SNIPPET_LIMIT = 1500;
+
+const describeHtml = (html: string) => ({
+  htmlLength: html.length,
+  pageTitle: /<title[^>]*>([\s\S]*?)<\/title>/i.exec(html)?.[1]?.trim(),
+  htmlSnippet: truncate(html, HTML_SNIPPET_LIMIT),
+});
+
 const extractNextData = (html: string): unknown => {
   const pattern =
     /<script[^>]*id=["']__NEXT_DATA__["'][^>]*>([\s\S]*?)<\/script>/i;
   const match = pattern.exec(html);
   if (!match || !match[1]) {
-    throw new Error("Unable to find __NEXT_DATA__ payload in YAJ HTML");
+    throw new DetailedError(
+      "Unable to find __NEXT_DATA__ payload in YAJ HTML",
+      describeHtml(html),
+    );
   }
-  return JSON.parse(match[1]);
+  try {
+    return JSON.parse(match[1]);
+  } catch (err) {
+    throw new DetailedError("Unable to parse __NEXT_DATA__ payload in YAJ HTML", {
+      parseError: (err as Error).message,
+      ...describeHtml(match[1]),
+    });
+  }
 };
 
 const getListingFromNextData = (nextData: unknown): NextListing | undefined => {
@@ -269,13 +288,34 @@ export default class YAJ implements IExtractor<YAJItem, SearchParams> {
     const url = `${BASE_URL}?${searchParams.toString()}`;
     logger.info({ url, query, page });
 
-    const { data } = await axios.get<string>(url, {
-      headers: {
-        "user-agent":
-          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 " +
-          "(KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36",
+    const startedAt = Date.now();
+    let response;
+    try {
+      response = await axios.get<string>(url, {
+        headers: {
+          "user-agent":
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 " +
+            "(KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36",
+        },
+        responseType: "text",
+      });
+    } catch (err) {
+      logger.err(
+        `YAJ upstream request failed after ${Date.now() - startedAt}ms: ` +
+          JSON.stringify(describeError(err)),
+      );
+      throw err;
+    }
+    const { data, status, headers } = response;
+    logger.info({
+      yajUpstream: {
+        status,
+        ms: Date.now() - startedAt,
+        contentType: headers?.["content-type"],
+        length: typeof data === "string" ? data.length : undefined,
+        // where we ended up after redirects (e.g. a login/consent/block page)
+        finalUrl: (response.request as { res?: { responseUrl?: string } })?.res?.responseUrl,
       },
-      responseType: "text",
     });
 
     const nextData = extractNextData(data);
