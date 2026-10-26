@@ -85,12 +85,16 @@ describe("Search routes", () => {
     nock("https://app.rakuten.co.jp")
       .get("/services/api/IchibaItem/Search/20170706")
       .query(true)
-      .reply(500);
+      .reply(500, "upstream exploded");
 
     const res = await agent.get("/api/search/rakuten").query({ query: uniqueQuery(), page: "1" });
 
     expect(res.status).toBe(BAD_REQUEST);
     expect(res.body.error).toContain("500");
+    expect(res.body.details.type).toBe("upstream");
+    expect(res.body.details.response.status).toBe(500);
+    expect(res.body.details.response.body).toBe("upstream exploded");
+    expect(res.body.details.request.params.applicationId).toBe("REDACTED");
   });
 
   it("serves a cached response without hitting upstream again", async () => {
