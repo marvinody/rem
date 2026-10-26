@@ -7,8 +7,14 @@ import { Sites } from "../../src/extractors/IExtractor";
 
 const { subtle } = webcrypto as unknown as { subtle: SubtleCrypto };
 
-const decodeSegment = (segment: string) =>
-  JSON.parse(Buffer.from(segment, "base64").toString("utf8"));
+type DPoPHeader = {
+  typ: string;
+  alg: string;
+  jwk: JsonWebKey;
+};
+
+const decodeSegment = <T>(segment: string) =>
+  JSON.parse(Buffer.from(segment, "base64").toString("utf8")) as T;
 
 describe("Mercari DPoP utils", () => {
   it("produces an ES256 DPoP JWT whose signature verifies against its embedded key", async () => {
@@ -18,13 +24,13 @@ describe("Mercari DPoP utils", () => {
     const dpop = await makeDPOP(keys, payload);
     const [header, body, signature] = dpop.split(".");
 
-    const decodedHeader = decodeSegment(header);
+    const decodedHeader = decodeSegment<DPoPHeader>(header);
     expect(decodedHeader.typ).toBe("dpop+jwt");
     expect(decodedHeader.alg).toBe("ES256");
     expect(decodedHeader.jwk.kty).toBe("EC");
     expect(decodedHeader.jwk.crv).toBe("P-256");
     expect(decodedHeader.jwk.d).toBeUndefined();
-    expect(decodeSegment(body)).toEqual(payload);
+    expect(decodeSegment<typeof payload>(body)).toEqual(payload);
     // base64url, no padding
     expect(dpop).toMatch(/^[\w-]+\.[\w-]+\.[\w-]+$/);
 
@@ -55,7 +61,7 @@ describe("Mercari Extractor", () => {
         return true;
       })
       .reply(function () {
-        sentDpop = this.req.headers.dpop as string;
+        sentDpop = this.req.headers.dpop;
         return [
           200,
           {
