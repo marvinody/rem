@@ -3,18 +3,9 @@
 import { Router, Request } from 'express';
 
 import { authHandler, notFoundHandler } from './util'
-import { getAllUsers, addOneUser, updateOneUser, deleteOneUser } from './Users';
 import cors, { } from 'cors'
 import expeditious from 'express-expeditious'
 
-
-
-// User-route
-const userRouter = Router();
-userRouter.get('/all', getAllUsers);
-userRouter.post('/add', addOneUser);
-userRouter.put('/update', updateOneUser);
-userRouter.delete('/delete/:id', deleteOneUser);
 
 import { YAJsearch } from './YAJSearch'
 import { MercariSearch } from './MercariSearch'

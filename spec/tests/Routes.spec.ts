@@ -115,10 +115,9 @@ describe("Search routes", () => {
     expect(res.status).toBe(NOT_FOUND);
   });
 
-  it("serves the index page for non-api routes", async () => {
+  it("404s non-api routes", async () => {
     const res = await agent.get("/some/page");
-    expect(res.status).toBe(OK);
-    expect(res.type).toBe("text/html");
+    expect(res.status).toBe(NOT_FOUND);
   });
 
   describe("CORS", () => {
