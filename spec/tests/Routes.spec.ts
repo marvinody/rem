@@ -57,8 +57,6 @@ describe("Search routes", () => {
   });
 
   it("defaults page to 1 when it is omitted", async () => {
-    // `const { page = 1 } = req.query` yields a number, which the string check rejects
-    pending("routes currently 400 when page is omitted");
     nock("https://app.rakuten.co.jp")
       .get("/services/api/IchibaItem/Search/20170706")
       .query((q) => q.page === "1")

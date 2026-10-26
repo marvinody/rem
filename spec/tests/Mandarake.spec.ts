@@ -53,9 +53,6 @@ describe("Mandarake Extractor", () => {
   });
 
   it("rejects when the upstream request fails", async () => {
-    // x-ray also leaks an unhandled rejection from its stream internals here,
-    // which Node >= 15 treats as fatal by default.
-    pending("Mandarake leaks an unhandled rejection on upstream errors");
     spyOn(console, "log");
     nock("https://order.mandarake.co.jp").get("/order/listPage/list").query(true).reply(500);
 

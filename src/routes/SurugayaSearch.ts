@@ -3,7 +3,7 @@ import { Request, Response } from 'express';
 
 const service = new Surugaya();
 export async function SurugayaSearch(req: Request, res: Response) {
-    const { query, page = 1 } = req.query
+    const { query, page = '1' } = req.query
 
     if (!query || typeof query !== 'string' || query.length < 3) {
         throw new Error("Query is required and needs at least 3 characters")

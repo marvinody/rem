@@ -89,15 +89,15 @@ export default class YAJ implements IExtractor<Item, SearchParams> {
                         imageURL: '.pic img@src'
                     }
                 ])
+            })(function (err: Error | null, resp: XScraper) {
+                // x-ray's .then() leaks an unhandled rejection on request errors,
+                // which Node treats as fatal, so use the callback API instead
+                if (err) {
+                    console.log(err)
+                    return rej(err)
+                }
+                resolve(scraperToResultSet(resp))
             })
-
-                .then(function (resp: XScraper) {
-                    resolve(scraperToResultSet(resp))
-                })
-                .catch(function (err: Error) {
-                    console.log(err) // handle error in promise
-                    rej(err)
-                })
         })
     }
 }
