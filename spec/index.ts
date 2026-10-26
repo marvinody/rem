@@ -21,6 +21,7 @@ jasmine.loadConfig({
   random: true,
   spec_dir: "spec",
   spec_files: ["./tests/**/*.spec.ts"],
+  helpers: ["./helpers/**/*.ts"],
   stopSpecOnExpectationFailure: false,
 });
 
