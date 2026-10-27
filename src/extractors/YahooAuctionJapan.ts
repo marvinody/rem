@@ -1,4 +1,5 @@
 import axios from "axios";
+import { HttpsProxyAgent } from "https-proxy-agent";
 import { IExtractor, Item, ResultSet, SearchParams, Sites } from "./IExtractor";
 import logger from "../shared/Logger";
 import { DetailedError, describeError, truncate } from "../shared/errorDetails";
@@ -273,7 +274,32 @@ const nextDataToScraper = (nextData: unknown, page: number): XScraper => {
 
 const BASE_URL = "https://auctions.yahoo.co.jp/search/search";
 const MAX_RESULTS_PER_PAGE = 100;
+
+// Yahoo blocks some datacenter/region IPs, so YAJ can optionally go through a proxy.
+const makeProxyAgent = (proxyUrl: string): HttpsProxyAgent<string> => {
+  let parsed: URL;
+  try {
+    parsed = new URL(proxyUrl);
+  } catch {
+    throw new Error("YAJ_PROXY_URL is not a valid URL");
+  }
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+    throw new Error("YAJ_PROXY_URL must use http:// or https://");
+  }
+  // only the host is logged, never the credentials
+  logger.info(`YAJ requests will go through proxy ${parsed.protocol}//${parsed.host}`);
+  return new HttpsProxyAgent(proxyUrl);
+};
+
 export default class YAJ implements IExtractor<YAJItem, SearchParams> {
+  private proxyAgent?: HttpsProxyAgent<string>;
+
+  constructor(proxyUrl = process.env.YAJ_PROXY_URL) {
+    if (proxyUrl) {
+      this.proxyAgent = makeProxyAgent(proxyUrl);
+    }
+  }
+
   isEnabled() {
     return true;
   }
@@ -284,9 +310,12 @@ export default class YAJ implements IExtractor<YAJItem, SearchParams> {
       b: ((page - 1) * MAX_RESULTS_PER_PAGE + 1).toString(),
       p: query,
       va: query,
+      // newest listings first (by first start time); Yahoo's default is "recommended"
+      s1: "new",
+      o1: "d",
     });
     const url = `${BASE_URL}?${searchParams.toString()}`;
-    logger.info({ url, query, page });
+    logger.info(JSON.stringify({ url, query, page }));
 
     const startedAt = Date.now();
     let response;
@@ -298,25 +327,31 @@ export default class YAJ implements IExtractor<YAJItem, SearchParams> {
             "(KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36",
         },
         responseType: "text",
+        ...(this.proxyAgent
+          // proxy: false stops axios applying its own (env-based) proxy on top
+          ? { httpsAgent: this.proxyAgent, proxy: false as const }
+          : {}),
       });
     } catch (err) {
       logger.err(
-        `YAJ upstream request failed after ${Date.now() - startedAt}ms: ` +
+        `YAJ upstream request failed after ${Date.now() - startedAt}ms ` +
+          `(viaProxy: ${Boolean(this.proxyAgent)}): ` +
           JSON.stringify(describeError(err)),
       );
       throw err;
     }
     const { data, status, headers } = response;
-    logger.info({
+    logger.info(JSON.stringify({
       yajUpstream: {
         status,
+        viaProxy: Boolean(this.proxyAgent),
         ms: Date.now() - startedAt,
         contentType: headers?.["content-type"],
         length: typeof data === "string" ? data.length : undefined,
         // where we ended up after redirects (e.g. a login/consent/block page)
         finalUrl: (response.request as { res?: { responseUrl?: string } })?.res?.responseUrl,
       },
-    });
+    }));
 
     const nextData = extractNextData(data);
     const scraped = nextDataToScraper(nextData, page);
