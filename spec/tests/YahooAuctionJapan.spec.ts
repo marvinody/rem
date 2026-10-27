@@ -36,6 +36,19 @@ describe("YahooAuctionJapan Extractor", () => {
     expect(first.price).toBeGreaterThanOrEqual(0);
   });
 
+  it("asks Yahoo for newest listings first", async () => {
+    const get = spyOn(axios, "get").and.returnValue(
+      Promise.reject(new Error("stop")) as never,
+    );
+
+    await expectAsync(new YAJ("").search({ query: "test query", page: 2 })).toBeRejected();
+
+    const params = new URL(get.calls.mostRecent().args[0]).searchParams;
+    expect(params.get("s1")).toBe("new");
+    expect(params.get("o1")).toBe("d");
+    expect(params.get("b")).toBe("101");
+  });
+
   describe("proxy", () => {
     const proxyUrl = "http://user:s3cret@proxy.example:8080";
 

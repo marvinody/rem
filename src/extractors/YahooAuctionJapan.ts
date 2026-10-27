@@ -310,6 +310,9 @@ export default class YAJ implements IExtractor<YAJItem, SearchParams> {
       b: ((page - 1) * MAX_RESULTS_PER_PAGE + 1).toString(),
       p: query,
       va: query,
+      // newest listings first (by first start time); Yahoo's default is "recommended"
+      s1: "new",
+      o1: "d",
     });
     const url = `${BASE_URL}?${searchParams.toString()}`;
     logger.info(JSON.stringify({ url, query, page }));
