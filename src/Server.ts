@@ -37,12 +37,14 @@ app.use('/api', BaseRouter);
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
     const details = describeError(err);
-    logger.err(err, true);
+    // Inspecting a whole axios error dumps its config, which can hold proxy credentials,
+    // so upstream errors log just the stack plus the redacted details.
+    logger.err(details ? (err.stack ?? err.message) : err, !details);
     if (details) {
         logger.err(JSON.stringify({
             route: req.originalUrl,
             ...describeError(err, LOG_BODY_LIMIT),
-        }), true);
+        }));
     }
     return res.status(BAD_REQUEST).json({
         error: err.message,

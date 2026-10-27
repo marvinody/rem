@@ -14,4 +14,6 @@ Most extractors (a module that pulls data from a website) will run fine without 
 
 If you launch the service with `SECRET_KEY` environment variable set, all http requests require that to be passed in as an `api-key` header. This was the most security I wanted to add since it's all in a private running bot where the key is only known to me.
 
+Yahoo Auctions Japan blocks some datacenter and non-Japan IPs (it shows a "ページは現在表示できません" page with a 500). If YAJ searches fail in production but work locally, set `YAJ_PROXY_URL` (e.g. `http://user:pass@host:port`) to send only YAJ requests through an HTTP(S) proxy, such as a residential proxy or a relay on a home connection. Only the proxy host is logged, never its credentials.
+
 In the future, I'd like to spin up some frontend so other people can search for stuff but I'd need a bunch of work for that because of caching and throttling.

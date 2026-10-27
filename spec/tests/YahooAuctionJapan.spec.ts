@@ -1,9 +1,11 @@
 import fs from "fs";
 import path from "path";
 import axios from "axios";
+import { HttpsProxyAgent } from "https-proxy-agent";
 
 import YAJ from "../../src/extractors/YahooAuctionJapan";
 import { Sites } from "../../src/extractors/IExtractor";
+import { describeError } from "../../src/shared/errorDetails";
 
 describe("YahooAuctionJapan Extractor", () => {
   it("parses listing items from __NEXT_DATA__ fixture", async () => {
@@ -32,5 +34,58 @@ describe("YahooAuctionJapan Extractor", () => {
     expect(first.title.length).toBeGreaterThan(0);
     expect(first.url).toContain("/jp/auction/");
     expect(first.price).toBeGreaterThanOrEqual(0);
+  });
+
+  describe("proxy", () => {
+    const proxyUrl = "http://user:s3cret@proxy.example:8080";
+
+    it("sends requests directly when no proxy is configured", async () => {
+      const get = spyOn(axios, "get").and.returnValue(
+        Promise.reject(new Error("stop")) as never,
+      );
+
+      await expectAsync(new YAJ("").search({ query: "test query" })).toBeRejected();
+
+      const config = get.calls.mostRecent().args[1] as Record<string, unknown>;
+      expect(config.httpsAgent).toBeUndefined();
+      expect(config.proxy).toBeUndefined();
+    });
+
+    it("routes requests through the configured proxy", async () => {
+      const get = spyOn(axios, "get").and.returnValue(
+        Promise.reject(new Error("stop")) as never,
+      );
+
+      await expectAsync(new YAJ(proxyUrl).search({ query: "test query" })).toBeRejected();
+
+      const config = get.calls.mostRecent().args[1] as Record<string, unknown>;
+      expect(config.httpsAgent).toEqual(jasmine.any(HttpsProxyAgent));
+      expect((config.httpsAgent as HttpsProxyAgent<string>).proxy.host).toBe(
+        "proxy.example:8080",
+      );
+      expect(config.proxy).toBe(false);
+    });
+
+    it("rejects an invalid proxy URL", () => {
+      expect(() => new YAJ("not a url")).toThrowError("YAJ_PROXY_URL is not a valid URL");
+      expect(() => new YAJ("socks5://proxy.example:1080")).toThrowError(
+        "YAJ_PROXY_URL must use http:// or https://",
+      );
+    });
+
+    it("keeps proxy credentials out of error details", () => {
+      const err = Object.assign(new Error("Request failed with status code 500"), {
+        isAxiosError: true,
+        config: {
+          method: "get",
+          url: "https://auctions.yahoo.co.jp/search/search",
+          httpsAgent: new HttpsProxyAgent(proxyUrl),
+          proxy: false,
+        },
+        response: { status: 500, statusText: "", headers: {}, data: "blocked" },
+      });
+
+      expect(JSON.stringify(describeError(err))).not.toContain("s3cret");
+    });
   });
 });
